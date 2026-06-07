@@ -52,6 +52,17 @@ extension SolveOutcome {
     }
 }
 
+/// Number of parallel fuzz engines. Defaults to the core count (full parallel):
+/// the `stop_at_first_counterexample` plugin halts the finding engine, and PTK's
+/// `runEngines` then cancels the siblings (cross-engine early-cancel), so `solve`
+/// still returns at the first counterexample with time-to-find — now with N
+/// engines searching instead of one. Override with `BST_PARALLELISM` (e.g. `=1`
+/// for a single engine).
+let enginesParallelism: Int = {
+    if let v = ProcessInfo.processInfo.environment["BST_PARALLELISM"], let n = Int(v), n > 0 { return n }
+    return ProcessInfo.processInfo.processorCount
+}()
+
 /// Run the coverage-guided fuzzer over inputs of type `I`, checking `check`.
 /// `check` returns the property verdict: `false` is a counterexample, `nil` a
 /// precondition discard, `true` a pass.
@@ -83,7 +94,7 @@ private func runFuzz<I: MutatorProviding & Codable & Sendable>(
         let result = try await fuzz(
             duration: duration,
             persistence: .ephemeral,
-            parallelism: 1,
+            parallelism: enginesParallelism,
             plugins: { [.corpusMutation(), stopAtFirstCounterexample] }
         ) { (input: I) in
             switch check(input) {
