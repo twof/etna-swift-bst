@@ -63,36 +63,37 @@ clean impl consults at each mutation point.
 This **diverges from ETNA's marauder source-swap + recompile** model, by design:
 PTK builds through a patched toolchain where per-mutant rebuilds are slow, and
 runtime selection keeps coverage instrumentation over every variant in a single
-build (and propagates into PTK's `TaskGroup` fuzz engines). `union_8` is
-byte-identical to the clean body — an *equivalent* mutant — so it is
-behaviourally undetectable, as in the reference.
+build (and propagates into PTK's `TaskGroup` fuzz engines). All 8 mutants are
+verbatim transcriptions of the hand-written Coq `Impl.v` mutant blocks.
 
-## Validation
+## Validation — against the hand-written Coq BST
 
-- **Faithful port (oracle).** Our Swift verdict matches the reference Python
-  clean impl on all **52** `etna.toml` witnesses (36 `true` / 16 `false`). The 16
-  `false` are not bugs: several properties precondition `isBST` on only *some*
-  arguments, so a witness carrying an invalid-BST argument fails on the correct
-  impl too. (`Tests/BSTTests/OracleTests.swift`.)
-- **Mutant fidelity.** Under-mutant verdicts match the reference (each mutant
-  applied to the Python impl with correct recursion) on all 52 witnesses, and
-  every non-equivalent mutant is caught by some witness.
+The oracle is the **hand-written 2023 Coq BST** ([`jwshii/etna`](https://github.com/jwshii/etna)),
+run via `oracle/coq-bst/` (the authors' `Impl.v`/`Spec.v` evaluated with
+`Compute`). We prefer it over the recent AI-assisted ports.
+
+- **Faithful port (differential oracle).** Across **396** inputs (valid BSTs +
+  arbitrary trees, all 18 properties, non-negative keys since the Coq BST uses
+  `nat`), our Swift `evaluate` matches the Coq clean implementation on **every
+  one** — 332 `true` / 14 `false` / 50 discards. (`Tests/BSTTests/OracleTests.swift`,
+  `CoqFixtures.swift`.)
+- **Mutant fidelity.** All 8 mutant bodies are verbatim transcriptions of the Coq
+  `Impl.v` mutant blocks; with the clean impl oracle-proven, every mutant
+  (including `union_8`) is caught by a clean-passing input.
   (`Tests/BSTTests/MutantTests.swift`.)
-- **Coverage-guided detection (PTK).** With short (~6–10s) budgets and a
-  type-based generator (small key range), PTK's `solve` finds counterexamples
-  for `insert_1/2/3` (via `InsertPost`) and `delete_4/5` (via `DeletePost`) —
-  *genuine* detections, since clean **passes** those properties.
+- **Coverage-guided detection (PTK).** With short budgets and a type-based
+  generator, PTK's `solve` finds counterexamples for the insert/delete mutants
+  (genuine — clean passes those properties).
 
-### Caveat: the base `union` is imperfect
+### Note: `union` was re-based on the hand-written Coq
 
-Clean `union` itself **fails** `UnionValid`/`UnionPost`/`UnionModel` on some
-inputs (e.g. `UnionValid` only preconditions `isBST(t1)`, and the fuel-bounded
-`union` does not preserve all model laws). This is faithful to the reference
-(those are exactly the union witnesses that are `false`-on-clean). Consequently
-the union properties do **not** cleanly isolate the union mutants — a `failed`
-result there can reflect the base bug rather than the mutant. A mutant is only
-*genuinely detected* by property `P` when clean `P` passes; `detect.sh` prints
-the clean baselines alongside so the distinction is visible.
+Validating against the Coq oracle surfaced that our `union` (followed from the
+`etna-python-bst` port) diverged from the hand-written Coq: the port's "clean"
+union is actually the hand-written authors' `union_8` *mutant*, and two
+properties' preconditions differed (`UnionValid`, `UnionPost`). We re-based the
+union algorithm + those preconditions + the union mutants on the hand-written
+Coq; the differential then went from 17 union mismatches to **0**. insert/delete
+were faithful throughout.
 
 ## Relation to ETNA
 
