@@ -2,7 +2,8 @@
 # Run the built `bst` solve binary with the patched toolchain's runtime on the
 # dylib path. ETNA's `solve` capability invokes this.
 #   run-bst.sh <strategy> <property> [duration_seconds]
-# The mutant under test is read from $BST_MUTANT (default: clean).
+# The mutant under test is whichever marauder variant is active in the current
+# build (ETNA activates it via source-swap + rebuild before calling this).
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_ROOT="${BUILD_ROOT:-/Users/fnord/Documents/OpenSourceDev/build/Ninja-RelWithDebInfoAssert}"

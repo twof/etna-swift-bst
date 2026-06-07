@@ -13,8 +13,8 @@
       {
         "Command": {
           "command": "${workload_path}/scripts/run-bst.sh",
-          "args": ["${strategy}", "${property}"],
-          "params": ["workload_path", "property", "strategy"]
+          "args": ["${strategy}", "${property}", "${timeout}"],
+          "params": ["workload_path", "property", "strategy", "timeout"]
         }
       }
     ],

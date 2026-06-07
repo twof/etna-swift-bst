@@ -34,7 +34,16 @@ so build via the wrapper rather than system `swift`:
 # Point at your local toolchain build (default shown); Xcode-beta SDK is used.
 export BUILD_ROOT=/path/to/OpenSourceDev/build/Ninja-RelWithDebInfoAssert
 ./scripts/swift-toolchain.sh build      # builds bst + bst-sampler
-./scripts/swift-toolchain.sh test       # runs the oracle + mutant tests
+./scripts/swift-toolchain.sh test       # runs the oracle tests
+```
+
+`Package.swift` depends on PropertyTestingKit via the **relative path
+`../PropertyTestingKit`** (PTK is unreleased and built from a local checkout), so
+the PTK checkout must sit beside this workload. Under ETNA the workload is cloned
+to `<experiment>/workloads/bst-swift/`, so symlink PTK next to it:
+
+```bash
+ln -s /path/to/PropertyTestingKit <experiment>/workloads/PropertyTestingKit
 ```
 
 Run the solver (the run wrappers put the toolchain runtime on the dylib path):
@@ -44,27 +53,44 @@ Run the solver (the run wrappers put the toolchain runtime on the dylib path):
 ./scripts/run-bst.sh ptk InsertPost 10
 # -> {"status":"passed","tests":...,"discards":...,"counterexample":null,...}
 
-BST_MUTANT=insert_1 ./scripts/run-bst.sh ptk InsertPost 10
-# -> {"status":"failed",...,"counterexample":"((T E 0 0 E) 1 0 0)",...}
-
 ./scripts/run-sampler.sh InsertPost 100   # cross-language `sample`: [{time,value},...]
-./scripts/detect.sh 8                      # reproduce the detection sweep
+./scripts/detect.sh 8                      # reproduce the source-swap detection sweep
 ```
 
 `solve` prints one line of ETNA result JSON (`status` ∈ passed | failed | aborted).
 
+## Running under the ETNA CLI
+
+The workload plugs into [`etna`](https://github.com/alpaylan/etna-cli) via
+`etna.toml` + `steps.json`. Because Swift isn't one of marauder's built-in
+languages, register it via the bundled `marauder.toml` (see [Mutants](#mutants)):
+
+```bash
+etna experiment new bst-eval && cd bst-eval
+etna workload add https://github.com/twof/etna-swift-bst   # name "bst-swift"
+
+export BUILD_ROOT=/path/to/OpenSourceDev/build/Ninja-RelWithDebInfoAssert
+export MARAUDER_CONFIG="$PWD/workloads/bst-swift/marauder.toml"   # registers Swift
+etna experiment run --tests bst-swift --params trials=10 --params timeout=60
+etna experiment visualize --figure bst.png                       # task-bucket chart
+```
+
+`MARAUDER_CONFIG` must be set: ETNA reads it both at the experiment root (to
+accept `language = "Swift"`) and at the workload dir (to locate the `.swift`
+mutation variants).
+
 ## Mutants
 
-The 8 mutants (`insert_1..3`, `delete_4..5`, `union_6..8`) are a single-source,
-faithful translation of `etna.toml`'s mutants (`Sources/BST/Mutants.swift`),
-selected at **runtime** via the `BST_MUTANT` env var and a `@TaskLocal` that the
-clean impl consults at each mutation point.
+The 8 mutants (`insert_1..3`, `delete_4..5`, `union_6..8`) are **marauder
+source-swap variants** inlined at their mutation points in `Sources/BST/Tree.swift`:
+each is a commented-out alternative body that ETNA's driver activates
+(`etna mutation set <mutant>`) and recompiles before fuzzing. This is ETNA's
+native mutation model — a *task* is one activated mutant.
 
-This **diverges from ETNA's marauder source-swap + recompile** model, by design:
-PTK builds through a patched toolchain where per-mutant rebuilds are slow, and
-runtime selection keeps coverage instrumentation over every variant in a single
-build (and propagates into PTK's `TaskGroup` fuzz engines). All 8 mutants are
-verbatim transcriptions of the hand-written Coq `Impl.v` mutant blocks.
+Swift isn't a built-in marauder language (Rocq/Haskell/Racket/Rust/OCaml/Python/
+Lean), so `marauder.toml` registers it as a custom language (extension `swift`,
+`/* */` comments, `|` marker — Swift block comments match Rust's). All 8 mutant
+bodies are verbatim transcriptions of the hand-written Coq `Impl.v` mutant blocks.
 
 ## Validation — against the hand-written Coq BST
 
@@ -78,12 +104,13 @@ run via `oracle/coq-bst/` (the authors' `Impl.v`/`Spec.v` evaluated with
   one** — 332 `true` / 14 `false` / 50 discards. (`Tests/BSTTests/OracleTests.swift`,
   `CoqFixtures.swift`.)
 - **Mutant fidelity.** All 8 mutant bodies are verbatim transcriptions of the Coq
-  `Impl.v` mutant blocks; with the clean impl oracle-proven, every mutant
-  (including `union_8`) is caught by a clean-passing input.
-  (`Tests/BSTTests/MutantTests.swift`.)
+  `Impl.v` mutant blocks. Because the mutants are now marauder source-swap
+  variants (one compiled build per mutant), fidelity is checked out-of-process by
+  `scripts/detect.sh` (activate → rebuild → solve), which is exactly what
+  `etna experiment run` does over the full (mutant × property) matrix.
 - **Coverage-guided detection (PTK).** With short budgets and a type-based
-  generator, PTK's `solve` finds counterexamples for the insert/delete mutants
-  (genuine — clean passes those properties).
+  generator, PTK's `solve` finds counterexamples for the insert/delete/union
+  mutants (genuine — clean passes those properties).
 
 ### Note: `union` was re-based on the hand-written Coq
 

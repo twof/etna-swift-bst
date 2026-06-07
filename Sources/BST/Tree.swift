@@ -1,8 +1,10 @@
 // Binary search tree implementation, ported from ETNA's reference workload
 // (alpaylan/etna-python-bst `impl.py`, which mirrors the Rust/Rocq ports).
 //
-// Milestone 1 ships only the *correct* bodies. The mutant variants (insert_1..3,
-// delete_4..5, union_6..8) arrive in milestone 2 via marauder comment-mutants.
+// The clean (correct) bodies are active; the eight mutants (insert_1..3,
+// delete_4..5, union_6..8) live inline as marauder source-swap variants —
+// commented-out alternative bodies that ETNA activates + recompiles per task
+// (see README "Mutants"; marauder.toml registers Swift as a custom language).
 //
 // Field order matches the reference `repr`: `(T left k v right)` and `(E)`.
 
@@ -34,7 +36,7 @@ public func insert(_ k: Int, _ v: Int, _ t: Tree) -> Tree {
     case .E:
         return .T(.E, k, v, .E)
     case let .T(l, k2, v2, r):
-        if let mutated = insertMutant(k, v, l, k2, v2, r) { return mutated }
+        /*| insert */
         if k < k2 {
             return .T(insert(k, v, l), k2, v2, r)
         } else if k2 < k {
@@ -42,6 +44,30 @@ public func insert(_ k: Int, _ v: Int, _ t: Tree) -> Tree {
         } else {
             return .T(l, k2, v, r)
         }
+        /*|| insert_1 */
+        /*|
+        _ = (l, k2, v2, r)
+        return .T(.E, k, v, .E)
+        */
+        /*|| insert_2 */
+        /*|
+        if k < k2 {
+            return .T(insert(k, v, l), k2, v2, r)
+        } else {
+            return .T(l, k2, v, r)
+        }
+        */
+        /*|| insert_3 */
+        /*|
+        if k < k2 {
+            return .T(insert(k, v, l), k2, v2, r)
+        } else if k2 < k {
+            return .T(l, k2, v2, insert(k, v, r))
+        } else {
+            return .T(l, k2, v2, r)
+        }
+        */
+        /* |*/
     }
 }
 
@@ -65,7 +91,7 @@ public func delete(_ k: Int, _ t: Tree) -> Tree {
     case .E:
         return .E
     case let .T(l, k2, v2, r):
-        if let mutated = deleteMutant(k, l, k2, v2, r) { return mutated }
+        /*| delete */
         if k < k2 {
             return .T(delete(k, l), k2, v2, r)
         } else if k2 < k {
@@ -73,6 +99,28 @@ public func delete(_ k: Int, _ t: Tree) -> Tree {
         } else {
             return join(l, r)
         }
+        /*|| delete_4 */
+        /*|
+        _ = v2
+        if k < k2 {
+            return delete(k, l)
+        } else if k2 < k {
+            return delete(k, r)
+        } else {
+            return join(l, r)
+        }
+        */
+        /*|| delete_5 */
+        /*|
+        if k2 < k {
+            return .T(delete(k, l), k2, v2, r)
+        } else if k < k2 {
+            return .T(l, k2, v2, delete(k, r))
+        } else {
+            return join(l, r)
+        }
+        */
+        /* |*/
     }
 }
 
@@ -116,9 +164,39 @@ public func unionF(_ l: Tree, _ r: Tree, _ f: Int) -> Tree {
         return l
     case let (.T(l1, k1, v1, r1), _):
         // Hand-written Coq clean union (jwshii/etna): split the *whole* other
-        // tree `r` by `below k1` / `above k1` at every node.
-        if let mutated = unionMutant(l1, k1, v1, r1, r, f1) { return mutated }
+        // tree `r` by `below k1` / `above k1` at every node. The union mutants
+        // below decompose `r` (always a node here, since `(_, .E)` is handled
+        // above); the `else { return l }` guard arm is therefore unreachable.
+        /*| unionF */
         return .T(unionF(l1, below(k1, r), f1), k1, v1, unionF(r1, above(k1, r), f1))
+        /*|| union_6 */
+        /*|
+        guard case let .T(l2, k2, v2, r2) = r else { return l }
+        return .T(l1, k1, v1, .T(unionF(r1, l2, f1), k2, v2, r2))
+        */
+        /*|| union_7 */
+        /*|
+        guard case let .T(l2, k2, v2, r2) = r else { return l }
+        if k1 == k2 {
+            return .T(unionF(l1, l2, f1), k1, v1, unionF(r1, r2, f1))
+        } else if k1 < k2 {
+            return .T(l1, k1, v1, .T(unionF(r1, l2, f1), k2, v2, r2))
+        } else {
+            return unionF(.T(l2, k2, v2, r2), .T(l1, k1, v1, r1), f1)
+        }
+        */
+        /*|| union_8 */
+        /*|
+        guard case let .T(l2, k2, v2, r2) = r else { return l }
+        if k1 == k2 {
+            return .T(unionF(l1, l2, f1), k1, v1, unionF(r1, r2, f1))
+        } else if k1 < k2 {
+            return .T(unionF(l1, below(k1, l2), f1), k1, v1, unionF(r1, .T(above(k1, l2), k2, v2, r2), f1))
+        } else {
+            return unionF(.T(l2, k2, v2, r2), .T(l1, k1, v1, r1), f1)
+        }
+        */
+        /* |*/
     }
 }
 

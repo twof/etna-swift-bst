@@ -2,6 +2,7 @@
 .swiftpm/
 *.xcodeproj
 .DS_Store
+etna.log
 
 # stray compiler artifacts
 *.d
