@@ -31,6 +31,7 @@ public func insert(_ k: Int, _ v: Int, _ t: Tree) -> Tree {
     case .E:
         return .T(.E, k, v, .E)
     case let .T(l, k2, v2, r):
+        if let mutated = insertMutant(k, v, l, k2, v2, r) { return mutated }
         if k < k2 {
             return .T(insert(k, v, l), k2, v2, r)
         } else if k2 < k {
@@ -61,6 +62,7 @@ public func delete(_ k: Int, _ t: Tree) -> Tree {
     case .E:
         return .E
     case let .T(l, k2, v2, r):
+        if let mutated = deleteMutant(k, l, k2, v2, r) { return mutated }
         if k < k2 {
             return .T(delete(k, l), k2, v2, r)
         } else if k2 < k {
@@ -110,6 +112,7 @@ public func unionF(_ l: Tree, _ r: Tree, _ f: Int) -> Tree {
     case (_, .E):
         return l
     case let (.T(l1, k1, v1, r1), .T(l2, k2, v2, r2)):
+        if let mutated = unionMutant(l1, k1, v1, r1, l2, k2, v2, r2, f1) { return mutated }
         if k1 == k2 {
             return .T(unionF(l1, l2, f1), k1, v1, unionF(r1, r2, f1))
         } else if k1 < k2 {
