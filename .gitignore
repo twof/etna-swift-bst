@@ -7,3 +7,10 @@
 *.d
 *.dia
 Package.resolved
+
+# Coq build artifacts
+*.vo
+*.vok
+*.vos
+*.glob
+.*.aux
