@@ -1,0 +1,111 @@
+name = "bst-swift"
+language = "Swift"
+description = "Binary search tree workload (Swift / PropertyTestingKit, coverage-guided)."
+
+# Ported from alpaylan/etna-python-bst's etna.toml — same eight mutants, tasks,
+# and ground-truth witnesses. Witnesses are in the canonical ETNA wire form
+# (bare `E`, `(T <left> <k> <v> <right>)`).
+#
+# NOTE on mutant injection: this workload selects the active mutant at runtime
+# via the BST_MUTANT env var (see README "Mutants"), rather than ETNA's marauder
+# source-swap + recompile, because PropertyTestingKit builds through a patched
+# toolchain where per-mutant rebuilds are expensive and runtime selection keeps
+# coverage instrumentation over every variant in one build.
+
+mutations = [
+  "insert_1", "insert_2", "insert_3",
+  "delete_4", "delete_5",
+  "union_6", "union_7", "union_8",
+]
+
+[[tasks]]
+mutations = ["insert_1"]
+tasks = [
+  { property = "InsertPost",        witnesses = [{ input = "((T E 2 1 E) 0 2 0)" }] },
+  { property = "InsertModel",       witnesses = [{ input = "((T E 1 0 E) 0 0)" }] },
+  { property = "DeleteInsert",      witnesses = [{ input = "((T E 1 0 E) 0 0 0)" }] },
+  { property = "InsertInsert",      witnesses = [{ input = "(E 1 0 0 0)" }] },
+  { property = "InsertUnion",       witnesses = [{ input = "(E (T E 1 1 E) 0 0)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T E 2 0 E) E 0 0)" }] },
+]
+
+[[tasks]]
+mutations = ["insert_2"]
+tasks = [
+  { property = "InsertPost",        witnesses = [{ input = "((T E 0 1 E) 1 0 0)" }] },
+  { property = "InsertModel",       witnesses = [{ input = "((T E -2 0 E) 0 0)" }] },
+  { property = "InsertDelete",      witnesses = [{ input = "((T E 0 2 (T E 1 0 E)) 0 0 0)" }] },
+  { property = "DeleteInsert",      witnesses = [{ input = "((T E 0 0 E) 0 1 0)" }] },
+  { property = "InsertInsert",      witnesses = [{ input = "(E 0 1 0 0)" }] },
+  { property = "InsertUnion",       witnesses = [{ input = "(E (T E 0 0 E) 1 0)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T E -2 0 E) E 0 0)" }] },
+]
+
+[[tasks]]
+mutations = ["insert_3"]
+tasks = [
+  { property = "InsertPost",        witnesses = [{ input = "((T E 3 0 E) 3 3 1)" }] },
+  { property = "InsertModel",       witnesses = [{ input = "((T E 0 1 E) 0 0)" }] },
+  { property = "InsertDelete",      witnesses = [{ input = "((T (T E 0 0 E) 2 0 E) 2 2 0)" }] },
+  { property = "InsertInsert",      witnesses = [{ input = "(E 0 0 1 0)" }] },
+  { property = "InsertUnion",       witnesses = [{ input = "(E (T E 0 0 E) 1 0)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T E -2 2 E) E -2 0)" }] },
+]
+
+[[tasks]]
+mutations = ["delete_4"]
+tasks = [
+  { property = "DeleteModel",       witnesses = [{ input = "((T E 0 0 E) 1)" }] },
+  { property = "DeletePost",        witnesses = [{ input = "((T E 0 0 E) 1 0)" }] },
+  { property = "DeleteDelete",      witnesses = [{ input = "((T (T (T E 0 0 E) 3 5 E) 5 0 E) 5 3)" }] },
+  { property = "DeleteInsert",      witnesses = [{ input = "(E 0 1 0)" }] },
+  { property = "DeleteUnion",       witnesses = [{ input = "((T E -1 0 E) (T E 0 1 E) -1)" }] },
+  { property = "InsertDelete",      witnesses = [{ input = "(E 0 1 0)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T E 0 1 E) (T E 1 0 E) 0 0)" }] },
+]
+
+[[tasks]]
+mutations = ["delete_5"]
+tasks = [
+  { property = "DeleteModel",       witnesses = [{ input = "((T (T E 1 0 E) 3 0 E) 1)" }] },
+  { property = "DeletePost",        witnesses = [{ input = "((T (T E 2 0 E) 4 1 E) 2 2)" }] },
+  { property = "DeleteDelete",      witnesses = [{ input = "((T E -4 0 (T E 4 4 E)) 4 -4)" }] },
+  { property = "DeleteInsert",      witnesses = [{ input = "((T E 2 0 E) -2 -2 0)" }] },
+  { property = "DeleteUnion",       witnesses = [{ input = "((T E -1 0 (T E 0 0 E)) (T E -2 2 E) -1)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T (T E -1 0 E) 0 0 E) E 0 0)" }] },
+]
+
+[[tasks]]
+mutations = ["union_6"]
+tasks = [
+  { property = "UnionValid",        witnesses = [{ input = "((T E 0 0 E) (T E 0 0 E))" }] },
+  { property = "UnionPost",         witnesses = [{ input = "((T E 0 0 (T E 1 1 E)) (T E 0 0 E) 1)" }] },
+  { property = "UnionModel",        witnesses = [{ input = "((T E 0 0 E) (T E 0 0 E))" }] },
+  { property = "DeleteUnion",       witnesses = [{ input = "((T E 2 2 E) (T E -1 0 E) -1)" }] },
+  { property = "InsertUnion",       witnesses = [{ input = "(E (T E 0 0 E) 1 0)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T E 0 0 E) (T E 0 0 E) 0 0)" }] },
+  { property = "UnionUnionAssoc",   witnesses = [{ input = "((T E 0 1 E) (T E 0 1 E) (T E 0 0 E))" }] },
+]
+
+[[tasks]]
+mutations = ["union_7"]
+tasks = [
+  { property = "UnionValid",        witnesses = [{ input = "(E (T E 0 2 (T E 0 0 E)))" }] },
+  { property = "UnionPost",         witnesses = [{ input = "((T (T E -2 0 E) 2 0 E) (T E 0 0 E) -2)" }] },
+  { property = "UnionModel",        witnesses = [{ input = "((T E -1 0 E) (T (T E -2 1 E) 0 0 E))" }] },
+  { property = "DeleteUnion",       witnesses = [{ input = "((T E 0 0 E) (T (T E 0 0 E) 2 0 E) 2)" }] },
+  { property = "InsertUnion",       witnesses = [{ input = "((T E 0 0 E) (T E 1 1 E) 1 0)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T (T E -1 0 E) 0 0 E) E 0 0)" }] },
+  { property = "UnionUnionAssoc",   witnesses = [{ input = "((T E 0 0 E) (T E 1 0 E) (T E 1 1 E))" }] },
+]
+
+[[tasks]]
+mutations = ["union_8"]
+tasks = [
+  { property = "UnionPost",         witnesses = [{ input = "((T (T E 4 4 E) 2147483647 0 E) (T E 4 0 E) 4)" }] },
+  { property = "UnionModel",        witnesses = [{ input = "((T (T E -2 0 E) 2 0 E) (T E -2 1 E))" }] },
+  { property = "DeleteUnion",       witnesses = [{ input = "((T (T E -2 0 E) 1 0 E) (T E 0 0 E) 1)" }] },
+  { property = "InsertUnion",       witnesses = [{ input = "((T E 2 2 E) (T E -1 1 E) -1 0)" }] },
+  { property = "UnionDeleteInsert", witnesses = [{ input = "((T E -1 3 E) (T E 3 1 E) -1 0)" }] },
+  { property = "UnionUnionAssoc",   witnesses = [{ input = "((T E 2 1 E) (T E 2 0 E) (T E 0 0 E))" }] },
+]
