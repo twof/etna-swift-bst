@@ -103,7 +103,7 @@ public func prop_delete_valid(_ t: Tree, _ k: Int) -> Bool? {
 }
 
 public func prop_union_valid(_ t1: Tree, _ t2: Tree) -> Bool? {
-    guard isBST(t1) else { return nil }
+    guard isBST(t1), isBST(t2) else { return nil }   // hand-written Coq: precondition on both
     return isBST(union(t1, t2))
 }
 
@@ -118,7 +118,7 @@ public func prop_delete_post(_ t: Tree, _ k: Int, _ k2: Int) -> Bool? {
 }
 
 public func prop_union_post(_ t1: Tree, _ t2: Tree, _ k: Int) -> Bool? {
-    guard isBST(t1), isBST(t2) else { return nil }
+    guard isBST(t1) else { return nil }   // hand-written Coq: precondition on t1 only
     let expected = find(k, t1) != nil ? find(k, t1) : find(k, t2)
     return find(k, union(t1, t2)) == expected
 }

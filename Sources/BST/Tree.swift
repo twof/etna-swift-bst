@@ -114,20 +114,11 @@ public func unionF(_ l: Tree, _ r: Tree, _ f: Int) -> Tree {
         return r
     case (_, .E):
         return l
-    case let (.T(l1, k1, v1, r1), .T(l2, k2, v2, r2)):
-        if let mutated = unionMutant(l1, k1, v1, r1, l2, k2, v2, r2, f1) { return mutated }
-        if k1 == k2 {
-            return .T(unionF(l1, l2, f1), k1, v1, unionF(r1, r2, f1))
-        } else if k1 < k2 {
-            return .T(
-                unionF(l1, below(k1, l2), f1),
-                k1,
-                v1,
-                unionF(r1, .T(above(k1, l2), k2, v2, r2), f1)
-            )
-        } else {
-            return unionF(.T(l2, k2, v2, r2), .T(l1, k1, v1, r1), f1)
-        }
+    case let (.T(l1, k1, v1, r1), _):
+        // Hand-written Coq clean union (jwshii/etna): split the *whole* other
+        // tree `r` by `below k1` / `above k1` at every node.
+        if let mutated = unionMutant(l1, k1, v1, r1, r, f1) { return mutated }
+        return .T(unionF(l1, below(k1, r), f1), k1, v1, unionF(r1, above(k1, r), f1))
     }
 }
 

@@ -92,17 +92,17 @@ func deleteMutant(_ k: Int, _ l: Tree, _ k2: Int, _ v2: Int, _ r: Tree) -> Tree?
     }
 }
 
-func unionMutant(
-    _ l1: Tree, _ k1: Int, _ v1: Int, _ r1: Tree,
-    _ l2: Tree, _ k2: Int, _ v2: Int, _ r2: Tree,
-    _ f1: Int
-) -> Tree? {
+// Union mutants from the hand-written Coq (jwshii/etna Impl.v): each applies
+// only when the other operand `r` is also a node (the clean body handles E).
+// `union_8` is NOT equivalent here — it is the algorithm the etna-python port
+// used as its "clean" union (below/above on the right child only).
+func unionMutant(_ l1: Tree, _ k1: Int, _ v1: Int, _ r1: Tree, _ r: Tree, _ f1: Int) -> Tree? {
     switch MutantContext.current {
     case .union_6:
-        // Ignores key ordering: blindly nests the right operand.
+        guard case let .T(l2, k2, v2, r2) = r else { return nil }
         return .T(l1, k1, v1, .T(unionF(r1, l2, f1), k2, v2, r2))
     case .union_7:
-        // `k1 < k2` case mis-merges (no below/above split).
+        guard case let .T(l2, k2, v2, r2) = r else { return nil }
         if k1 == k2 {
             return .T(unionF(l1, l2, f1), k1, v1, unionF(r1, r2, f1))
         } else if k1 < k2 {
@@ -111,8 +111,14 @@ func unionMutant(
             return unionF(.T(l2, k2, v2, r2), .T(l1, k1, v1, r1), f1)
         }
     case .union_8:
-        // Identical to the clean body — an equivalent mutant (undetectable).
-        return nil
+        guard case let .T(l2, k2, v2, r2) = r else { return nil }
+        if k1 == k2 {
+            return .T(unionF(l1, l2, f1), k1, v1, unionF(r1, r2, f1))
+        } else if k1 < k2 {
+            return .T(unionF(l1, below(k1, l2), f1), k1, v1, unionF(r1, .T(above(k1, l2), k2, v2, r2), f1))
+        } else {
+            return unionF(.T(l2, k2, v2, r2), .T(l1, k1, v1, r1), f1)
+        }
     default:
         return nil
     }
