@@ -2,3 +2,8 @@
 .swiftpm/
 *.xcodeproj
 .DS_Store
+
+# stray compiler artifacts
+*.d
+*.dia
+Package.resolved
