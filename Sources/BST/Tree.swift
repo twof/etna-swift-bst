@@ -6,16 +6,19 @@
 //
 // Field order matches the reference `repr`: `(T left k v right)` and `(E)`.
 
-public indirect enum Tree: Equatable {
+public indirect enum Tree: Equatable, Codable, Sendable {
     case E
     case T(Tree, Int, Int, Tree)
 }
 
 extension Tree: CustomStringConvertible {
+    /// Canonical ETNA wire form: `E` and `(T <left> <k> <v> <right>)` — matches
+    /// the `etna.toml` witness format and what the language-agnostic runners
+    /// consume. (The decoder in `SExpr.swift` also accepts the `(E)` spelling.)
     public var description: String {
         switch self {
         case .E:
-            return "(E)"
+            return "E"
         case let .T(l, k, v, r):
             return "(T \(l) \(k) \(v) \(r))"
         }

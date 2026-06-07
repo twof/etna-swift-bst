@@ -30,6 +30,12 @@ public func withMutant<T>(_ mutant: Mutant, _ body: () throws -> T) rethrows -> 
     try MutantContext.$current.withValue(mutant, operation: body)
 }
 
+/// Async variant — the selected mutant propagates to child tasks (PTK's fuzz
+/// engines run as TaskGroup children), so the whole fuzz run sees the mutant.
+public func withMutant<T>(_ mutant: Mutant, _ body: () async throws -> T) async rethrows -> T {
+    try await MutantContext.$current.withValue(mutant, operation: body)
+}
+
 // MARK: - Mutant bodies
 //
 // Each returns the mutant's result for the `T(l, k2, v2, r)` recursive case, or

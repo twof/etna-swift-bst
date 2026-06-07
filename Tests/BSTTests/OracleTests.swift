@@ -27,7 +27,7 @@ struct OracleTests {
     func sExprRoundTrip() throws {
         let tree = try decodeTree(parseSExpr("(T (T E 0 0 E) 2 5 E)"))
         #expect(tree == .T(.T(.E, 0, 0, .E), 2, 5, .E))
-        #expect(tree.description == "(T (T (E) 0 0 (E)) 2 5 (E))")
+        #expect(tree.description == "(T (T E 0 0 E) 2 5 E)")
     }
 
     @Test("isBST basics")
