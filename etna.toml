@@ -1,6 +1,7 @@
 name = "bst-swift"
 language = "Swift"
 description = "Binary search tree workload (Swift / PropertyTestingKit, coverage-guided)."
+strategies = ["ptk"]
 
 # Ported from alpaylan/etna-python-bst's etna.toml — same eight mutants, tasks,
 # and ground-truth witnesses. Witnesses are in the canonical ETNA wire form
