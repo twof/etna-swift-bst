@@ -81,21 +81,11 @@ private func runFuzz<I: MutatorProviding & Codable & Sendable>(
         // time is time-to-find, and the run returns well within ETNA's hard
         // process-kill at `timeout`. A single engine keeps that exit prompt
         // (sibling engines would otherwise run the full budget after a halt).
-        let stopAtFirstCounterexample = FuzzPlugin<I>(
-            id: "stop_at_first_counterexample",
-            handleSync: { _ in [] },
-            handleAsync: { event in
-                if case .failureFound = event {
-                    return [.stop(FuzzPluginAction<I>.StopAction(reason: .custom("counterexample_found")))]
-                }
-                return []
-            }
-        )
         let result = try await fuzz(
             duration: duration,
             persistence: .ephemeral,
             parallelism: enginesParallelism,
-            plugins: { [.corpusMutation(), stopAtFirstCounterexample] }
+            plugins: { [.corpusMutation(), .stopOnFirstFailure(reason: .custom("counterexample_found"))] }
         ) { (input: I) in
             switch check(input) {
             case .some(false): throw PropertyViolation(wire: wire(input))
