@@ -60,7 +60,9 @@ extension Tree: MutatorProviding {
                 .T(.E, 1, 0, .T(.E, 2, 0, .E)),
             ],
             mutate: { mutateTree($0, &$1) },
-            generate: { genTree(&$0, 4) }
+            generate: { genTree(&$0, 4) },
+            // Real REDUCE/eviction size metric: wire length.
+            size: { $0.description.count }
         )
     }
 }
@@ -73,7 +75,8 @@ struct ArgT: Codable, Sendable, MutatorProviding {
     static var defaultMutator: Mutator<ArgT> {
         Mutator(seeds: [ArgT(t: .E)],
                 mutate: { x, rng in ArgT(t: mutateTree(x.t, &rng)) },
-                generate: { ArgT(t: genTree(&$0, 4)) })
+                generate: { ArgT(t: genTree(&$0, 4)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -89,7 +92,8 @@ struct ArgTI: Codable, Sendable, MutatorProviding {
                     default: return ArgTI(t: x.t, k: smallInt.mutate(x.k, &rng))
                     }
                 },
-                generate: { ArgTI(t: genTree(&$0, 4), k: smallInt.generate(&$0)) })
+                generate: { ArgTI(t: genTree(&$0, 4), k: smallInt.generate(&$0)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -105,7 +109,8 @@ struct ArgTII: Codable, Sendable, MutatorProviding {
                     default: return ArgTII(t: x.t, k: x.k, k2: smallInt.mutate(x.k2, &rng))
                     }
                 },
-                generate: { ArgTII(t: genTree(&$0, 4), k: smallInt.generate(&$0), k2: smallInt.generate(&$0)) })
+                generate: { ArgTII(t: genTree(&$0, 4), k: smallInt.generate(&$0), k2: smallInt.generate(&$0)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -122,7 +127,8 @@ struct ArgTIII: Codable, Sendable, MutatorProviding {
                     default: return ArgTIII(t: x.t, k: x.k, k2: x.k2, v: smallInt.mutate(x.v, &rng))
                     }
                 },
-                generate: { ArgTIII(t: genTree(&$0, 4), k: smallInt.generate(&$0), k2: smallInt.generate(&$0), v: smallInt.generate(&$0)) })
+                generate: { ArgTIII(t: genTree(&$0, 4), k: smallInt.generate(&$0), k2: smallInt.generate(&$0), v: smallInt.generate(&$0)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -140,7 +146,8 @@ struct ArgTIIII: Codable, Sendable, MutatorProviding {
                     default: return ArgTIIII(t: x.t, k: x.k, k2: x.k2, v: x.v, v2: smallInt.mutate(x.v2, &rng))
                     }
                 },
-                generate: { ArgTIIII(t: genTree(&$0, 4), k: smallInt.generate(&$0), k2: smallInt.generate(&$0), v: smallInt.generate(&$0), v2: smallInt.generate(&$0)) })
+                generate: { ArgTIIII(t: genTree(&$0, 4), k: smallInt.generate(&$0), k2: smallInt.generate(&$0), v: smallInt.generate(&$0), v2: smallInt.generate(&$0)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -156,7 +163,8 @@ struct ArgTT: Codable, Sendable, MutatorProviding {
                         return ArgTT(t1: x.t1, t2: mutateTree(x.t2, &rng))
                     }
                 },
-                generate: { ArgTT(t1: genTree(&$0, 4), t2: genTree(&$0, 4)) })
+                generate: { ArgTT(t1: genTree(&$0, 4), t2: genTree(&$0, 4)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -172,7 +180,8 @@ struct ArgTTI: Codable, Sendable, MutatorProviding {
                     default: return ArgTTI(t1: x.t1, t2: x.t2, k: smallInt.mutate(x.k, &rng))
                     }
                 },
-                generate: { ArgTTI(t1: genTree(&$0, 4), t2: genTree(&$0, 4), k: smallInt.generate(&$0)) })
+                generate: { ArgTTI(t1: genTree(&$0, 4), t2: genTree(&$0, 4), k: smallInt.generate(&$0)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -189,7 +198,8 @@ struct ArgTTII: Codable, Sendable, MutatorProviding {
                     default: return ArgTTII(t1: x.t1, t2: x.t2, k: x.k, v: smallInt.mutate(x.v, &rng))
                     }
                 },
-                generate: { ArgTTII(t1: genTree(&$0, 4), t2: genTree(&$0, 4), k: smallInt.generate(&$0), v: smallInt.generate(&$0)) })
+                generate: { ArgTTII(t1: genTree(&$0, 4), t2: genTree(&$0, 4), k: smallInt.generate(&$0), v: smallInt.generate(&$0)) },
+                size: { $0.wire.count })
     }
 }
 
@@ -205,6 +215,7 @@ struct ArgTTT: Codable, Sendable, MutatorProviding {
                     default: return ArgTTT(t1: x.t1, t2: x.t2, t3: mutateTree(x.t3, &rng))
                     }
                 },
-                generate: { ArgTTT(t1: genTree(&$0, 4), t2: genTree(&$0, 4), t3: genTree(&$0, 4)) })
+                generate: { ArgTTT(t1: genTree(&$0, 4), t2: genTree(&$0, 4), t3: genTree(&$0, 4)) },
+                size: { $0.wire.count })
     }
 }
